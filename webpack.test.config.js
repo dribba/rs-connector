@@ -2,10 +2,14 @@ var webpack = require('webpack');
 var path = require('path');
 
 module.exports = {
-    entry: ['./test/all.js'],
+    entry: {
+        tests: [path.join(__dirname, 'test', 'all.js')]
+    },
 
     output: {
-        filename: './build/tests.js'
+        path: path.join(__dirname, './build'),
+        filename: '[name].js',
+        libraryTarget: "umd"
     },
 
     module: {
@@ -13,7 +17,10 @@ module.exports = {
             {
                 test: /\.js$/,
                 exclude: /node_modules/,
-                loader: 'babel'
+                loader: "babel-loader",
+                query: {
+                    cacheDirectory: true,
+                }
             }
         ]
     },

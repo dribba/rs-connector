@@ -1,20 +1,27 @@
 {
-  "name": "reactive-store-connector",
+  "name": "rs-connector",
   "version": "1.0.0",
   "description": "Connects a ReactiveStore with React components _a la Redux_",
-  "main": "index.js",
+  "main": "build/rs-connector.js",
   "scripts": {
     "test": "testem",
-    "watchTestBuild": "webpack --config webpack.test.config.js --watch"
+    "testBuild-w": "webpack --config webpack.test.config.js --watch",
+    "build": "webpack --config webpack.config.js",
+    "build-w": "webpack --config webpack.config.js --watch"
   },
   "keywords": [
     "react",
     "reactiveStore"
   ],
   "author": "David Ribba",
-  "license": "ISC",
+  "license": "MIT",
+  "repository" : {
+    "type": "git", 
+    "url": "https://github.com/dribba/rs-connector"
+  },
   "dependencies": {
-    "react": "^15.4.1"
+    "react": "^15.4.1",
+    "reactive-store": "git+https://github.com/dribba/reactive-store.git"
   },
   "devDependencies": {
     "babel-core": "^6.18.2",

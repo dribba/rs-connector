@@ -2,10 +2,11 @@ var webpack = require('webpack');
 var path = require('path');
 
 module.exports = {
-    entry: path.join(__dirname, 'test', 'all.js'),
+    entry: path.join(__dirname, 'src', 'connect.js'),
+
     output: {
         path: path.join(__dirname, 'build'),
-        filename: 'tests.js',
+        filename: 'rs-connector.js',
         libraryTarget: "umd"
     },
 

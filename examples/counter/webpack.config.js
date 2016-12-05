@@ -2,11 +2,11 @@ var webpack = require('webpack');
 var path = require('path');
 
 module.exports = {
-    entry: path.join(__dirname, 'test', 'all.js'),
+    entry:  path.join(__dirname, 'src', 'index.js'),
+
     output: {
-        path: path.join(__dirname, 'build'),
-        filename: 'tests.js',
-        libraryTarget: "umd"
+        path: path.join(__dirname, './build'),
+        filename: 'main.js',
     },
 
     module: {
@@ -24,7 +24,10 @@ module.exports = {
 
     resolve: {
         extensions: ['', '.js'],
-        modulesDirectories: ['src', 'node_modules']
+        modulesDirectories: ['src', 'node_modules'],
+        alias: {
+            'rs-connector': path.join(__dirname, '..', '..', 'build', 'rs-connector.js'),
+        }
     },
 
     node: {

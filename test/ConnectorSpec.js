@@ -1,5 +1,4 @@
 import Connector from '../src/Connector';
-import connect from '../src/connect';
 import {ConnectKey, ConnectStore} from '../src/models';
 import tape from 'tape';
 import React from 'react';

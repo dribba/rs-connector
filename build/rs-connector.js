@@ -90,7 +90,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    this.connections = connections;
 	}
 
-	BuilderState.prototype.merge = function merge(thatState) {
+	BuilderState.prototype.join = BuilderState.prototype.merge = function join(thatState) {
 	    var allConnections = this.connections.concat(thatState.connections);
 
 	    return allConnections.reduce(function (_ref, _ref2) {
@@ -125,7 +125,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	function ConnectBuilder(state) {
 	    this.state = state;
 	}
-	ConnectBuilder.prototype.merge = function merge(thatBuilder) {
+	ConnectBuilder.prototype.join = ConnectBuilder.prototype.merge = function join(thatBuilder) {
 	    return new ConnectBuilder(this.state.merge(thatBuilder.getState()));
 	};
 	ConnectBuilder.prototype.getState = function getState() {
@@ -137,7 +137,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	ConnectBuilder.prototype.getStores = function getStores() {
 	    return this.state.stores;
 	};
-	ConnectBuilder.prototype.wrap = ConnectBuilder.prototype.toComponent = ConnectBuilder.prototype.connectComponent = function toComponent(Component) {
+	ConnectBuilder.prototype.wrap = ConnectBuilder.prototype.toComponent = ConnectBuilder.prototype.connect = function connect(Component) {
 	    return (0, _Connector2.default)(Component, this.state.connections);
 	};
 	ConnectBuilder.prototype.toString = function toString() {

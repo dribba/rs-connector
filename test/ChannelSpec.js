@@ -1,5 +1,4 @@
-import Connector from '../src/Connector';
-import connect from '../src/connect';
+import Channel from '../src/Channel';
 import {ConnectKey, ConnectStore} from '../src/models';
 import tape from 'tape';
 import React from 'react';
@@ -20,91 +19,91 @@ function storeConnection(store, keys) {
 
 test('connects to a single key in a store', (t) => {
     var RS = ReactiveStore();
-    var connection = connect('foo', RS);
+    var channel = Channel('foo', RS);
 
-    t.equal(typeof connection.merge, 'function', 'connections have merge function');
-    t.equal(typeof connection.toComponent, 'function', 'connections have toComponent function');
+    t.equal(typeof channel.join, 'function', 'connections have merge function');
+    t.equal(typeof channel.toComponent, 'function', 'connections have toComponent function');
     t.end();
 });
 
 // Key resolution tests
 test('resolves a single string key', (t) => {
     var RS = ReactiveStore();
-    var connection = connect('foo', RS);
+    var channel = Channel('foo', RS);
 
-    t.equal(connection.getConnections().length, 1, 'connection was created');
-    t.looseEqual(connection.getConnections()[0].keys, [ key('foo') ], 'correct key connections created');
+    t.equal(channel.getConnections().length, 1, 'connection was created');
+    t.looseEqual(channel.getConnections()[0].keys, [ key('foo') ], 'correct key connections created');
     t.end();
 });
 test('resolves multiple string keys', (t) => {
     var RS = ReactiveStore();
-    var connection = connect(['foo', 'bar', 'baz[0]'], RS);
+    var channel = Channel(['foo', 'bar', 'baz[0]'], RS);
 
-    t.equal(connection.getConnections().length, 1, 'connection was created');
-    t.looseEqual(connection.getConnections()[0].keys, [ key('foo'), key('bar'), key('baz[0]') ], 'correct key connections created');
+    t.equal(channel.getConnections().length, 1, 'connection was created');
+    t.looseEqual(channel.getConnections()[0].keys, [ key('foo'), key('bar'), key('baz[0]') ], 'correct key connections created');
     t.end();
 });
 test('resolves object keys', (t) => {
     var RS = ReactiveStore();
-    var connection = connect({
+    var channel = Channel({
         'f.o.o': 'foo', 
         b: 'bar', 
         c: 'baz[0]'
     }, RS);
 
-    t.equal(connection.getConnections().length, 1, 'connection was not created');
-    t.looseEqual(connection.getConnections()[0].keys, [ key('f.o.o', 'foo'), key('b', 'bar'), key('c', 'baz[0]') ], 'correct key connections created');
+    t.equal(channel.getConnections().length, 1, 'connection was not created');
+    t.looseEqual(channel.getConnections()[0].keys, [ key('f.o.o', 'foo'), key('b', 'bar'), key('c', 'baz[0]') ], 'correct key connections created');
     t.end();
 });
 test('resolves array of arrays keys', (t) => {
     var RS = ReactiveStore();
-    var connection = connect([
+    var channel = Channel([
         ['f.o.o', 'foo'], 
         ['b', 'bar'], 
         ['c', 'baz[0]']
     ], RS);
 
-    t.equal(connection.getConnections().length, 1, 'connection was created');
-    t.looseEqual(connection.getConnections()[0].keys, [ key('f.o.o', 'foo'), key('b', 'bar'), key('c', 'baz[0]') ], 'correct key connections created');
+    t.equal(channel.getConnections().length, 1, 'connection was created');
+    t.looseEqual(channel.getConnections()[0].keys, [ key('f.o.o', 'foo'), key('b', 'bar'), key('c', 'baz[0]') ], 'correct key connections created');
     t.end();
 });
 test('connections can be merged(single store)', (t) => {
     var RS = ReactiveStore();
-    var connection1 = connect('foo', RS);
-    var connection2 = connect('bar', RS);
-    var connection = connection1.merge(connection2);
+    var channel1 = Channel('foo', RS);
+    var channel2 = Channel('bar', RS);
+    var channel = channel1.merge(channel2);
 
-    t.equal(connection.getConnections().length, 1, 'connection was created');
-    t.looseEqual(connection.getConnections()[0].keys, [ key('foo'), key('bar')], 'correct key connections created');
+    t.equal(channel.getConnections().length, 1, 'connection was created');
+    t.looseEqual(channel.getConnections()[0].keys, [ key('foo'), key('bar')], 'correct key connections created');
     t.end();
 });
 test('connections can be merged(multi store)', (t) => {
     var RS1 = ReactiveStore();
     var RS2 = ReactiveStore();
-    var connection1 = connect('foo', RS1);
-    var connection2 = connect('bar', RS2);
-    var connection = connection1.merge(connection2);
+    var channel1 = Channel('foo', RS1);
+    var channel2 = Channel('bar', RS2);
+    var channel = channel1.merge(channel2);
 
-    t.equal(connection.getStores().length, 2, 'correct number of store');
-    t.equal(connection.getConnections().length, 2, 'connection was created');
-    t.looseEqual(connection.getConnections()[0].keys, [ key('foo') ], 'correct key connections created');
-    t.looseEqual(connection.getConnections()[1].keys, [ key('bar') ], 'correct key connections created');
+    t.equal(channel.getStores().length, 2, 'correct number of store');
+    t.equal(channel.getConnections().length, 2, 'connection was created');
+    t.looseEqual(channel.getConnections()[0].keys, [ key('foo') ], 'correct key connections created');
+    t.looseEqual(channel.getConnections()[1].keys, [ key('bar') ], 'correct key connections created');
     t.end();
 });
-test('connections can connect to a React component', (t) => {
+test('connections can Channel to a React component', (t) => {
     var RS1 = ReactiveStore();
-    var connection = connect({
+    var channel = Channel({
         'name': 'user.name'
     }, RS1);
     var ExampleComponent = (props) => (<div>{props.name}</div>);
 
     // API
-    t.equal(typeof connection.wrap, 'function', 'wrap function exists');
-    t.equal(typeof connection.toComponent, 'function', 'toComponent function exists');
-    t.equal(typeof connection.connectComponent, 'function', 'connectComponent function exists');
+    t.equal(typeof channel.connect, 'function', 'connect function exists');
+    t.equal(typeof channel.wrap, 'function', 'wrap function exists');
+    t.equal(typeof channel.toComponent, 'function', 'toComponent function exists');
     
     // rendering
-    var ConnectedComponent = connection.wrap(ExampleComponent);
+    var ConnectedComponent = channel.wrap(ExampleComponent);
     var renderer = createRenderer();
     renderer.render(<ConnectedComponent name="Anonymous" />);
     var result = renderer.getRenderOutput();
@@ -120,20 +119,20 @@ test('connections can connect to a React component', (t) => {
 });
 test('connections can map state keys', (t) => {
     var RS1 = ReactiveStore();
-    var connection1 = connect({
+    var channel1 = Channel({
         'name': 'user.name'
     }, RS1);
     var RS2 = ReactiveStore();
-    var connection2 = connect({
+    var channel2 = Channel({
         'email': 'user.email'
     }, RS2);
-    var connection = connection1.merge(connection2);
+    var channel = channel1.merge(channel2);
     var ExampleComponent = (props) => (<div>{props.name}</div>);
     RS1.set('user.name', 'John');
     RS2.set('user.email', 'john@example.com');
 
     // rendering
-    var ConnectedComponent = connection.wrap(ExampleComponent);
+    var ConnectedComponent = channel.wrap(ExampleComponent);
     var renderer = createRenderer();
     renderer.render(<ConnectedComponent />);
     var result = renderer.getRenderOutput();

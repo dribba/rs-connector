@@ -1,7 +1,5 @@
 var React = require('react');
 
-
-
 function createConnections(connections) {
     if (!(connections instanceof Array)) throw new Error('Unsupported type');
 

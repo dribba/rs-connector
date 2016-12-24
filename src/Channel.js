@@ -1,67 +1,27 @@
 import React from 'react';
+import ReactiveStore from 'reactive-store';
 
 import Connector from './Connector';
-import {ConnectKey, ConnectStore} from './models';
+import ConnectKey from './ConnectKey';
+import Connection from './Connection';
+import {
+    mapAll,
+    mapKey,
+    mapObj,
+    filterKey,
+    filterKeys,
+    filterObj,
+    noDuplicates
+} from './mappers';
 
-function findIndex(arr, pred) {
-    for(var i = 0, len = arr.length; i < len; i++) {
-        if (pred(arr[i])) return i;
-    }
-    return -1;
+function notUndefined(x) {
+    return x !== undefined;
 }
-
-function BuilderState(stores, connections) {
-    this.stores = stores;
-    this.connections = connections;
+function nonEmptyObject(obj) {
+    return Object.keys(obj).length > 0;
 }
-
-BuilderState.prototype.join = BuilderState.prototype.merge = function join(thatState) {
-    var allConnections = this.connections.concat(thatState.connections);
-
-    return allConnections.reduce(({stores: storesAcc, connections: connectionsAcc}, {store, keys}) => {
-        if (storesAcc.indexOf(store) === -1) {
-            let connect = new ConnectStore(store, keys);
-
-            return new BuilderState(storesAcc.concat(store), connectionsAcc.concat(connect));
-        } else {
-            // find the existing connection
-            let existingConnectionIdx = findIndex(connectionsAcc, conn => conn.store === store);
-            let existingConnection = connectionsAcc[existingConnectionIdx];
-            // create new connection
-            let connect = new ConnectStore(store, existingConnection.keys.concat(keys));
-            // replace old connection with the new one
-            connectionsAcc[existingConnectionIdx] = connect; 
-
-            return new BuilderState(storesAcc, connectionsAcc);
-        }
-    }, new BuilderState([], []));
-};
-BuilderState.prototype.toString = function toString() {
-    return `BuilderState(${this.stores}, ${this.connections})`;
-};
-
-function ConnectBuilder(state) {
-    this.state = state;
-}
-ConnectBuilder.prototype.join = ConnectBuilder.prototype.merge = function join(thatBuilder) {
-    return new ConnectBuilder(this.state.merge(thatBuilder.getState()));
-};
-ConnectBuilder.prototype.getState = function getState() {
-    return this.state;
-};
-ConnectBuilder.prototype.getConnections = function getConnections() {
-    return this.state.connections;
-};
-ConnectBuilder.prototype.getStores = function getStores() {
-    return this.state.stores;
-};
-ConnectBuilder.prototype.wrap = ConnectBuilder.prototype.toComponent = ConnectBuilder.prototype.connect = 
-    function connect(Component) {
-        return Connector(Component, this.state.connections);
-    };
-ConnectBuilder.prototype.toString = function toString() {
-    return `ConnectBuilder(${this.state})`;
-};
+function identity(x) { return x; };
+function always(x) { return () => x; };
 
 function resolveKeyString(key) {
     var lastDotIdx = key.lastIndexOf('.');
@@ -96,9 +56,80 @@ function resolveKeys(keys) {
     }
 }
 
-
-export default function connect(rsKeys, store) {
+function createChannel(rsKeys, store) {
     var allKeys = resolveKeys(rsKeys);
-    var connection = new ConnectStore(store, allKeys);
-    return new ConnectBuilder(new BuilderState([store], [connection]));
+    var connection = Connection.create(store, allKeys);
+    return ChannelApi(connection);
+}
+
+export default function Channel(rsKeys, store) {
+    return createChannel(rsKeys, store)
+        .filterKeys(notUndefined)
+        .filter(nonEmptyObject);
+}
+
+Channel.dirty = function(rsKeys, store) {
+    return createChannel(rsKeys, store);
+};
+Channel.private = function(rsKeys, useStore = identity, make = Channel) {
+    var store = ReactiveStore();
+    var channel = make(rsKeys, store);
+    return [channel, useStore(store)];
+};
+
+function ChannelApi(connection) {
+    return {
+        _conn: connection,
+        connect(Component) {
+            return Connector(Component, connection);
+        },
+        wrap(Component) {
+            return this.connect(Component);
+        },
+        tap(fn) {
+            return ChannelApi(connection.tap(fn));
+        },
+        map(fn) {
+            return ChannelApi(connection.map(fn));
+        },
+        mapAll(fn) {
+            return this.map(mapAll(fn));
+        },
+        mapKey(key, fn) {
+            return this.map(mapKey(key, fn));
+        },
+        mapObj(obj) {
+            return this.map(mapObj(key, fn));
+        },
+        transform(obj) {
+            return this.mapObj(obj);
+        },
+        filter(fn) {
+            return ChannelApi(connection.filter(fn));
+        },
+        filterKeys(fn) {
+            return this.map(filterKeys(fn));
+        },
+        filterKey(key, fn) {
+            return this.map(filterKey(key, fn));
+        },
+        filterObj(obj) {
+            return this.map(filterObj(obj));
+        },
+        noDuplicates() {
+            return this.filter(noDuplicates());
+        },
+        concat(other, mergeFn) {
+            return ChannelApi(connection.concat(other._conn, mergeFn));
+        },
+        merge(other, mergeFn) {
+            return this.concat(other, mergeFn);
+        },
+        join(other, mergeFn) {
+            return this.concat(other, mergeFn);
+        },
+        toString() {
+            return `ChannelApi()`;
+        }
+    }
 }

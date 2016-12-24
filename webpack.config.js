@@ -9,7 +9,10 @@ module.exports = {
         filename: 'rs-connector.js',
         libraryTarget: "umd"
     },
-
+    externals: {
+        react: 'react',
+        'reactive-store': 'reactive-store'
+    },
     module: {
         loaders: [
             {

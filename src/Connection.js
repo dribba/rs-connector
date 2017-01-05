@@ -9,7 +9,7 @@ export default function Connection(pull, subscribe) {
             return Connection(pull.map(fn), subscribe.map(fn));
         },
         tap(fn) {
-            return Connection(pull.map(fn), subscribe.map(fn));
+            return Connection(pull.tap(fn), subscribe);
         },
         filter(fn) {
             return Connection(pull.filter(fn), subscribe);

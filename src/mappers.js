@@ -1,5 +1,7 @@
 import shallowequal from 'shallowequal';
 
+function identity(x) { return x; }
+
 export function mapAll(fn) {
     return state => Object.keys(state).reduce((acc, key) => {
         acc[key] = fn(state[key]);

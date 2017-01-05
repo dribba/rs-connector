@@ -86,6 +86,14 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _Connection2 = _interopRequireDefault(_Connection);
 
+	var _Pull = __webpack_require__(6);
+
+	var _Pull2 = _interopRequireDefault(_Pull);
+
+	var _Subscribe = __webpack_require__(7);
+
+	var _Subscribe2 = _interopRequireDefault(_Subscribe);
+
 	var _mappers = __webpack_require__(8);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -155,26 +163,38 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return createChannel(rsKeys, store).filterKeys(notUndefined).filter(nonEmptyObject);
 	}
 
+	Channel.constant = function (value) {
+	    return ChannelApi((0, _Connection2.default)(_Pull2.default.constant(value), _Subscribe2.default.once));
+	};
+	Channel.fromProducer = function (producer) {
+	    return ChannelApi((0, _Connection2.default)(_Pull2.default.empty, _Subscribe2.default.fromProducer(producer)));
+	};
 	Channel.dirty = function (rsKeys, store) {
 	    return createChannel(rsKeys, store);
 	};
 	Channel.private = function (rsKeys) {
-	    var useStore = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : identity;
+	    var useStore = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : function (store) {
+	        return { store: store };
+	    };
 	    var make = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : Channel;
 
 	    var store = (0, _reactiveStore2.default)();
-	    var channel = make(rsKeys, store);
-	    return [channel, useStore(store)];
+	    var storeApi = useStore(store);
+	    return Channel.constant(storeApi).merge(make(rsKeys, store));
 	};
 
 	function ChannelApi(connection) {
 	    return {
 	        _conn: connection,
-	        connect: function connect(Component) {
-	            return (0, _Connector2.default)(Component, connection);
+	        connect: function connect(Component, filterDuplicates) {
+	            if (filterDuplicates === false) {
+	                return (0, _Connector2.default)(Component, connection);
+	            } else {
+	                return (0, _Connector2.default)(Component, this.noDuplicates()._conn);
+	            }
 	        },
-	        wrap: function wrap(Component) {
-	            return this.connect(Component);
+	        wrap: function wrap(Component, noDuplicates) {
+	            return this.connect(Component, noDuplicates);
 	        },
 	        tap: function tap(fn) {
 	            return ChannelApi(connection.tap(fn));
@@ -296,6 +316,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            key: 'render',
 	            value: function render() {
 	                var refs = this.hasRefs && this.isCompositeComponent ? { refs: this.refs } : {};
+	                console.log("rendering", this.props, this.state);
 	                return _react2.default.createElement(Component, _extends({}, this.props, this.state, refs));
 	            }
 	        }, {
@@ -356,7 +377,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            return Connection(pull.map(fn), subscribe.map(fn));
 	        },
 	        tap: function tap(fn) {
-	            return Connection(pull.map(fn), subscribe.map(fn));
+	            return Connection(pull.tap(fn), subscribe);
 	        },
 	        filter: function filter(fn) {
 	            return Connection(pull.filter(fn), subscribe);
@@ -434,9 +455,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	        }
 	    };
 	}
+	Pull.empty = Pull(function (observer) {
+	    return observer(undefined);
+	});
 	Pull.create = function create(keys, store) {
-	    return Pull(function (fn) {
-	        return fn(keys.reduce(collectState(store), {}));
+	    return Pull(function (observer) {
+	        return observer(keys.reduce(collectState(store), {}));
+	    });
+	};
+	Pull.constant = function constant(value) {
+	    return Pull(function (observer) {
+	        return observer(value);
 	    });
 	};
 
@@ -489,6 +518,22 @@ return /******/ (function(modules) { // webpackBootstrap
 	        };
 	    });
 	};
+	Subscribe.once = Subscribe(function (pull) {
+	    return function (observer) {
+	        pull(observer);
+	        return identity;
+	    };
+	});
+	function identity(x) {
+	    return x;
+	}
+	Subscribe.fromProducer = function fromProducer(producer) {
+	    return Subscribe(function (pull) {
+	        return function (observer) {
+	            return producer(observer) || identity;
+	        };
+	    });
+	};
 
 /***/ },
 /* 8 */
@@ -514,6 +559,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+	function identity(x) {
+	    return x;
+	}
 
 	function mapAll(fn) {
 	    return function (state) {

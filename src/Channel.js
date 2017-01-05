@@ -4,6 +4,8 @@ import ReactiveStore from 'reactive-store';
 import Connector from './Connector';
 import ConnectKey from './ConnectKey';
 import Connection from './Connection';
+import Pull from './Pull';
+import Subscribe from './Subscribe';
 import {
     mapAll,
     mapKey,
@@ -68,23 +70,33 @@ export default function Channel(rsKeys, store) {
         .filter(nonEmptyObject);
 }
 
+Channel.constant = function(value) {
+    return ChannelApi(Connection(Pull.constant(value), Subscribe.once));
+}
+Channel.fromProducer = function(producer) {
+    return ChannelApi(Connection(Pull.empty, Subscribe.fromProducer(producer)));
+}
 Channel.dirty = function(rsKeys, store) {
     return createChannel(rsKeys, store);
 };
-Channel.private = function(rsKeys, useStore = identity, make = Channel) {
+Channel.private = function(rsKeys, useStore = (store => ({store})), make = Channel) {
     var store = ReactiveStore();
-    var channel = make(rsKeys, store);
-    return [channel, useStore(store)];
+    var storeApi = useStore(store);
+    return Channel.constant(storeApi).merge(make(rsKeys, store));
 };
 
 function ChannelApi(connection) {
     return {
         _conn: connection,
-        connect(Component) {
-            return Connector(Component, connection);
+        connect(Component, filterDuplicates) {
+            if (filterDuplicates === false) {
+                return Connector(Component, connection);
+            } else {
+                return Connector(Component, this.noDuplicates()._conn);
+            }
         },
-        wrap(Component) {
-            return this.connect(Component);
+        wrap(Component, noDuplicates) {
+            return this.connect(Component, noDuplicates);
         },
         tap(fn) {
             return ChannelApi(connection.tap(fn));

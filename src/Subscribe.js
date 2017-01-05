@@ -31,3 +31,13 @@ Subscribe.create = function create(store) {
         }).stop;
     });
 };
+Subscribe.once = Subscribe(pull => observer => {
+    pull(observer);
+    return identity;
+});
+function identity(x) { return x; }
+Subscribe.fromProducer = function fromProducer(producer) {
+    return Subscribe(pull => observer => {
+        return producer(observer) || identity;
+    });
+};

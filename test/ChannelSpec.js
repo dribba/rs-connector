@@ -140,10 +140,14 @@ test('connections can be merged(multi store)', (t) => {
     var RS1 = ReactiveStore();
     RS1.set('foo', 42);
     var channel1 = Channel('foo', RS1);
-    var [channel2, updatePrivateStore] = Channel.private('bar', store => {
+    var channel2 = Channel.private('bar', store => {
         // set initial state
-        store.set('bar', 'ohhh, this is private');
-        return () => store.set('bar', 'updated');
+        store.set('bar', 'shhh, this is private');
+        return {
+            update() {
+                store.set('bar', 'updated');
+            } 
+        };
     });
     var channel = channel1.merge(channel2).noDuplicates();
 
@@ -157,11 +161,9 @@ test('connections can be merged(multi store)', (t) => {
         firstRun && t.equal(state.bar.indexOf('private'), 14, 'receives values from channel1');
         !firstRun && t.equal(state.bar, 'updated', 'receives values from channel1');
         t.ok(runCount <= 2, 'should only update once');
+        state.update();
         if (!ran) ran = true;
     });
-
-    updatePrivateStore();
-    updatePrivateStore();
 
     unsubscribe();
 });

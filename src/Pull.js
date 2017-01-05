@@ -29,6 +29,16 @@ export default function Pull(pull) {
         }
     };
 }
+Pull.empty = Pull(
+    (observer) => observer(undefined)
+);
 Pull.create = function create(keys, store) {
-    return Pull((fn) => fn(keys.reduce(collectState(store), {})));
+    return Pull(
+        (observer) => observer(keys.reduce(collectState(store), {}))
+    );
+};
+Pull.constant = function constant(value) {
+    return Pull(
+        (observer) => observer(value)
+    );
 };
